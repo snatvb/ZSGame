@@ -1,0 +1,10 @@
+{"frames": [
+    {
+        "filename": "enemy1",
+        "frame": {"x":15,"y":134,"w":32,"h":54},
+        "rotated": false,
+        "trimmed": true,
+        "spriteSourceSize": {"x":3,"y":5,"w":32,"h":54},
+        "sourceSize": {"w":32,"h":52}
+    }
+]}

@@ -14,6 +14,7 @@ window.onload = function() {
         this.speed = 0;
     }
     
+    
     Character.prototype = {
         init: function() {
             this.spawn(this.position.x, this.position.y);
@@ -34,20 +35,29 @@ window.onload = function() {
             this.object.animations.add('move_top', this.animations.move_top, 8, true);
         },
         goBottom: function (){
-            this.object.body.velocity.x = 0;
-            if(this.speed < this.maxSpeed)
-                this.speed += this.accelerate;
+            if(this.accelerate!=false){
+                this.object.body.velocity.x = 0;
+                if(this.speed < this.maxSpeed)
+                    this.speed += this.accelerate;
+            } else this.speed = this.maxSpeed;
             this.object.animations.play('move_bottom');
             this.object.body.velocity.y = this.speed;
         },
         goTop: function (){
-            this.object.body.velocity.x = 0;
-            if(this.speed < this.maxSpeed)
-                this.speed += this.accelerate;
+            if(this.accelerate!=false){
+                this.object.body.velocity.x = 0;
+                if(this.speed < this.maxSpeed)
+                    this.speed += this.accelerate;
+            } else this.speed = this.maxSpeed;
             this.object.animations.play('move_top');
             this.object.body.velocity.y = -this.speed;
         },
         goRight: function (){
+            if(this.accelerate!=false){
+                this.object.body.velocity.y = 0;
+                if(this.speed < this.maxSpeed)
+                    this.speed += this.accelerate;
+            } else this.speed = this.maxSpeed;
             this.object.body.velocity.y = 0;
             if(this.speed < this.maxSpeed)
                 this.speed += this.accelerate;
@@ -55,17 +65,21 @@ window.onload = function() {
             this.object.body.velocity.x = this.speed;
         },
         goLeft: function (){
-            this.object.body.velocity.y = 0;
-            if(this.speed < this.maxSpeed)
-                this.speed += this.accelerate;
+            if(this.accelerate!=false){
+                this.object.body.velocity.y = 0;
+                if(this.speed < this.maxSpeed)
+                    this.speed += this.accelerate;
+            } else this.speed = this.maxSpeed;
             this.object.animations.play('move_left');
             this.object.body.velocity.x = -this.speed;
         },
         goStop: function(){
-            if(this.speed > 0)
-                this.speed -= this.accelerate;
-            if(this.speed < 0)
-                this.speed = 0;
+            if(this.accelerate!=false){
+                if(this.speed > 0)
+                    this.speed -= this.accelerate;
+                if(this.speed < 0)
+                    this.speed = 0;
+            } else this.speed = 0;
             
             // "Легкая" остановка
             if(this.object.body.velocity.x > 0)
@@ -82,11 +96,84 @@ window.onload = function() {
         }
     };
     
-    function Player(name, x, y) {
+    function Enemy(x,y) { // создание врагов
+        Character.apply(this, arguments);
+        this.spriteName = 'enemy1';
+        this.animations = {                             // создаем анимации
+            move_bottom: ['enemy1','enemy1_bottom'],
+            move_top: ['enemy1_top','enemy1_top2'],
+            move_left: ['enemy1_left', 'enemy1_left2'],
+            move_right: ['enemy1_right', 'enemy1_right2']
+        };
+        this.position = { x: x, y: y };
+        this.targets = [];
+        this.accelerate = false;
+        
+        this.areaVisibility = {
+            top: 300,
+            bottom: 300,
+            left: 300,
+            right: 300
+        }
+        this.oversight = 40;
+        
+        this.init();
+        
+        this.object.body.immovable = true;
+    }
+    
+    Enemy.prototype = Object.create(Character.prototype); // Наследуем Character
+    Enemy.prototype.constructor = Enemy;
+    
+    Enemy.prototype.update = function(){
+        for (var i = 0; i < this.targets.length; i++){
+            if(this.visibility(this.targets[i])){
+                if(this.checkNearby(this.targets[i])){
+                    this.goStop();
+                    break;
+                }
+//                console.log(this.object.x < this.targets[i].object.x && (this.object.x + this.oversight) < this.targets[i].object.x);
+//                console.log(this.object.x > this.targets[i].object.x && (this.object.x + this.oversight) > this.targets[i].object.x);
+                if(this.object.x < this.targets[i].object.x && (this.object.x + this.oversight) < this.targets[i].object.x){
+                    this.goRight();
+                    this.goBottom();}
+                if(this.object.x > this.targets[i].object.x && (this.object.x + this.oversight) > this.targets[i].object.x)
+                    this.goLeft();
+                break;
+            }
+            
+        }
+    };
+    
+    Enemy.prototype.checkNearby = function(target) {
+        console.log(
+            (Math.abs(target.object.y) - Math.abs(this.object.y) < this.oversight) &&
+           (Math.abs(target.object.y) - Math.abs(this.object.y) > 0)
+        );
+        if ((Math.abs(target.object.x) - Math.abs(this.object.x) < this.oversight) &&
+            (Math.abs(target.object.x) - Math.abs(this.object.x) > 0) &&
+            (Math.abs(target.object.y) - Math.abs(this.object.y) < this.oversight) &&
+           (Math.abs(target.object.y) - Math.abs(this.object.y) > 0))
+            return true;
+//        if(target.object.x)
+//            console.log(true);
+        return false;
+    }
+    
+    Enemy.prototype.visibility = function(target) {                             // Проверяем, видит ли объкт какую-либо цель (цель передается)
+        if(target.object.y < (this.object.y + this.areaVisibility.top) && 
+                   target.object.y > (this.object.y - this.areaVisibility.bottom) &&
+                   target.object.x < (this.object.x + this.areaVisibility.right) &&
+                   target.object.y > (this.object.y - this.areaVisibility.left))
+            return true;
+        return false;
+    };
+    
+    function Player(name, x, y) { // Создание игрока
         Character.apply(this, arguments);
         this.name = name;
         this.spriteName = 'player';
-        this.animations = {
+        this.animations = {                             // создаем анимации
             move_bottom: ['player','player_bottom'],
             move_top: ['player_top','player_top2'],
             move_left: ['player_left', 'player_left2'],
@@ -95,33 +182,24 @@ window.onload = function() {
         this.keyboard = new KeyBoard(this);
         this.position = { x: x, y: y };
         
-        
         this.init();
+
     }
     
-    Player.prototype = Object.create(Character.prototype);
+    Player.prototype = Object.create(Character.prototype); // Наследуем Character
     Player.prototype.constructor = Player;
     
     Player.prototype.update = function () {
-        this.keyboard.update();
-//        this.object.body.velocity.y = 150;
-//        if(this.keyboard.down.isDown && this.speed < this.maxSpeed){
-//            this.speed += this.accelerate;
-//            this.goBottom();
-//        } else if(!this.keyboard.down.isDown && this.speed > 0){
-//            this.speed -= this.accelerate;
-//            this.object.body.velocity.y = this.speed;
-//        } else if (this.speed <= 0){
-//            this.speed = 0;
-//            this.object.animations.stop();
-//            this.object.body.velocity.y = this.speed;
-//        }
+        this.keyboard.update(); // Следим за клавиатурой
     }
     
     function ZVGame() {
         this.player = new Player("snatvb", 100, 100);
-        game.world.camera.target = this.player.object;
-//        game.camera.follow(this.player);
+        this.ememies = this.createEnemies();
+        
+        game.physics.arcade.collide(this.player.object, this.ememies);
+//        game.world.camera.target = this.player.object;
+        game.camera.follow(this.player.object);
 //        game.camera.deadzone = new Phaser.Rectangle(150, 150, 1440, 300);
 //        game.camera.focusOnXY(0, 0);
     }
@@ -130,6 +208,17 @@ window.onload = function() {
         update: function(){
 //            game.world.camera.target.postUpdate(this.player);
             this.player.update();
+            game.physics.arcade.collide(this.player.object, this.ememies[0].object);
+            this.ememies[0].update();
+        },
+        createEnemies: function(){
+            var item, enemes = [];
+            for (var i = 0; i < 1; i++){
+                item = new Enemy(10,10);
+                item.targets.push(this.player);
+                enemes.push(item);
+            }
+            return enemes;
         }
     };
     
@@ -163,60 +252,21 @@ window.onload = function() {
 
         game.load.image('logo', 'phaser.png');
         game.load.atlas('player', 'img/characters/one.png', 'img/characters/one.json');
+        game.load.atlas('enemy1', 'img/enemies/one.png', 'img/enemies/one.json');
         game.load.image('land', 'img/light_grass.png');
 
     }
 
     function create () {
-//        game.physics.startSystem(Phaser.Physics.ARCADE);
         game.world.setBounds(-1000, -1000, 3000, 3000);
         land = game.add.tileSprite(0, 0, screenSize.x, screenSize.y, 'land');
         land.fixedToCamera = true;
         
         game.physics.startSystem(Phaser.Physics.ARCADE);
-//        var logo = game.add.sprite(game.world.centerX, game.world.centerY, 'logo');
-//        var player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
-//        logo.anchor.setTo(0.5, 0.5);
         zvgame = new ZVGame();
-        
-//        player = game.add.sprite(32, 32, 'player');
-//        game.physics.arcade.enable(player);
-//        
-//        cursors = game.input.keyboard.createCursorKeys();
     }
     
     function update () {
-//        game.world.camera.target.postUpdate();
-//        player.body.velocity.x = 0;
-//
-//        if (cursors.left.isDown)
-//        {
-//            //  Move to the left
-//            player.body.velocity.x = -150;
-//
-//            player.animations.play('left');
-//        }
-//        else if (cursors.right.isDown)
-//        {
-//            //  Move to the right
-//            player.body.velocity.x = 150;
-//
-//            player.animations.play('right');
-//        }
-//        else
-//        {
-//            //  Stand still
-//            player.animations.stop();
-//
-//            player.frame = 4;
-//        }
-//
-//        //  Allow the player to jump if they are touching the ground.
-//        if (cursors.up.isDown && player.body.touching.down)
-//        {
-//            player.body.velocity.y = -350;
-//        }
-        
         zvgame.update();
         
         land.tilePosition.x = -game.camera.x;
