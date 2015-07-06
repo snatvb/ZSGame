@@ -178,7 +178,7 @@ window.onload = function() {
         return false;
     };
     
-    function Player(name, x, y) { // Создание игрока
+    function Player(name, x, y) {                       // Создание игрока
         Character.apply(this, arguments);
         this.name = name;
         this.spriteName = 'player';
