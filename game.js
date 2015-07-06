@@ -114,7 +114,7 @@ window.onload = function() {
             bottom: 300,
             left: 300,
             right: 300
-        }
+        };
         this.oversight = 40;
         
         this.init();
@@ -127,44 +127,53 @@ window.onload = function() {
     
     Enemy.prototype.update = function(){
         for (var i = 0; i < this.targets.length; i++){
-            if(this.visibility(this.targets[i])){
+            if(this.visibility(this.targets[i])){               // если видит цель
+                console.log(this.checkNearby(this.targets[i])); // если рядом с целью
                 if(this.checkNearby(this.targets[i])){
                     this.goStop();
                     break;
                 }
-//                console.log(this.object.x < this.targets[i].object.x && (this.object.x + this.oversight) < this.targets[i].object.x);
-//                console.log(this.object.x > this.targets[i].object.x && (this.object.x + this.oversight) > this.targets[i].object.x);
-                if(this.object.x < this.targets[i].object.x && (this.object.x + this.oversight) < this.targets[i].object.x){
+                if((this.targets[i].object.y + this.object.body.width) > (this.object.y + this.object.body.width) &&
+                    (this.targets[i].object.y + this.object.body.width) > (this.object.y + this.object.body.width - this.oversight)){
+                    //console.log('GO BOTTOM!');
+                    this.goBottom();
+                } else
+                if((this.targets[i].object.y - this.object.body.width) < (this.object.y + this.object.body.width) &&
+                    (this.targets[i].object.y - this.object.body.width) < (this.object.y + this.object.body.width + this.oversight)){
+                    //console.log('GO TOP!');
+                    this.goTop();
+                }
+
+                if((this.targets[i].object.x - this.object.body.width) > (this.object.x + this.object.body.width) &&
+                    (this.targets[i].object.x - this.object.body.width) > (this.object.x + this.object.body.width - this.oversight)){
+                    //console.log('GO RIGHT!');
                     this.goRight();
-                    this.goBottom();}
-                if(this.object.x > this.targets[i].object.x && (this.object.x + this.oversight) > this.targets[i].object.x)
+                } else
+                if((this.targets[i].object.x + this.object.body.width) < (this.object.x + this.object.body.width) &&
+                    (this.targets[i].object.x + this.object.body.width) < (this.object.x + this.object.body.width + this.oversight)){
+                    //console.log('GO LEFT!');
                     this.goLeft();
+                }
                 break;
-            }
+            } else this.goStop();                                               // цель не видно
             
         }
     };
     
-    Enemy.prototype.checkNearby = function(target) {
-        console.log(
-            (Math.abs(target.object.y) - Math.abs(this.object.y) < this.oversight) &&
-           (Math.abs(target.object.y) - Math.abs(this.object.y) > 0)
-        );
-        if ((Math.abs(target.object.x) - Math.abs(this.object.x) < this.oversight) &&
-            (Math.abs(target.object.x) - Math.abs(this.object.x) > 0) &&
-            (Math.abs(target.object.y) - Math.abs(this.object.y) < this.oversight) &&
-           (Math.abs(target.object.y) - Math.abs(this.object.y) > 0))
+    Enemy.prototype.checkNearby = function(target) {                            // Проверяем, не рядом ли цель
+        if (target.object.y < (this.object.y + this.oversight*1.4) &&
+            target.object.y > (this.object.y - this.oversight*1.4) &&
+            target.object.x < (this.object.x + this.oversight*1.4) &&
+            target.object.x > (this.object.x - this.oversight*1.4))
             return true;
-//        if(target.object.x)
-//            console.log(true);
         return false;
-    }
+    };
     
     Enemy.prototype.visibility = function(target) {                             // Проверяем, видит ли объкт какую-либо цель (цель передается)
-        if(target.object.y < (this.object.y + this.areaVisibility.top) && 
-                   target.object.y > (this.object.y - this.areaVisibility.bottom) &&
-                   target.object.x < (this.object.x + this.areaVisibility.right) &&
-                   target.object.y > (this.object.y - this.areaVisibility.left))
+        if (target.object.y < (this.object.y + this.areaVisibility.top) &&
+            target.object.y > (this.object.y - this.areaVisibility.bottom) &&
+            target.object.x < (this.object.x + this.areaVisibility.right) &&
+            target.object.y > (this.object.y - this.areaVisibility.left))
             return true;
         return false;
     };
@@ -191,7 +200,7 @@ window.onload = function() {
     
     Player.prototype.update = function () {
         this.keyboard.update(); // Следим за клавиатурой
-    }
+    };
     
     function ZVGame() {
         this.player = new Player("snatvb", 100, 100);
@@ -232,25 +241,24 @@ window.onload = function() {
             var obj = this.obj;
             if(this.keys.down.isDown){ // Движение вниз
                 obj.goBottom();
-                return;
+                return true;
             } else if(this.keys.up.isDown){ // Движение вверх
                 obj.goTop();
-                return;
+                return true;
             } else if(this.keys.left.isDown){ // Движение влево
                 obj.goLeft();
-                return;
+                return true;
             } else if(this.keys.right.isDown){ // Движение вправо
                 obj.goRight();
-                return;
+                return true;
             } else {
                 obj.goStop();
             }
         }
-    }
+    };
     
     function preload () {
 
-        game.load.image('logo', 'phaser.png');
         game.load.atlas('player', 'img/characters/one.png', 'img/characters/one.json');
         game.load.atlas('enemy1', 'img/enemies/one.png', 'img/enemies/one.json');
         game.load.image('land', 'img/light_grass.png');
